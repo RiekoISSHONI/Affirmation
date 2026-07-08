@@ -145,7 +145,7 @@
     border-color: var(--accent);
   }
 
-  textarea { min-height: 70px; resize: vertical; }
+  textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
 
   .field { margin-bottom: 18px; }
 
@@ -194,6 +194,12 @@
     background: var(--accent);
     cursor: pointer;
     border: 3px solid var(--surface);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0 20px;
   }
 
   .chips {
@@ -380,6 +386,16 @@
     color: var(--ink-soft);
     margin-bottom: 6px;
     font-weight: 600;
+  }
+
+  .quirks-box {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    color: var(--ink);
+    white-space: pre-wrap;
+    line-height: 1.5;
   }
 
   /* Chat */
@@ -641,6 +657,11 @@
           <div id="reveal-traits"></div>
         </div>
 
+        <div class="reveal-section" id="reveal-quirks-section">
+          <div class="reveal-section-label">Quirks & details</div>
+          <div id="reveal-quirks" class="quirks-box"></div>
+        </div>
+
         <div class="reveal-section">
           <div class="reveal-section-label">Hobbies</div>
           <div id="reveal-hobbies" style="font-size: 0.95rem;"></div>
@@ -706,14 +727,18 @@
 <script>
 // ============= DATA =============
 const TRAITS = [
-  { key: 'loyal',     label: 'Loyal',       low: 'Wanders',     high: 'Devoted' },
-  { key: 'humor',     label: 'Funny',       low: 'Serious',     high: 'Hilarious' },
-  { key: 'romance',   label: 'Romantic',    low: 'Reserved',    high: 'Hopeless romantic' },
-  { key: 'ambition',  label: 'Ambitious',   low: 'Chill',       high: 'Driven' },
-  { key: 'adventure', label: 'Adventurous', low: 'Homebody',    high: 'Always exploring' },
-  { key: 'patience',  label: 'Patient',     low: 'Restless',    high: 'Endlessly patient' },
-  { key: 'confident', label: 'Confident',   low: 'Shy',         high: 'Self-assured' },
-  { key: 'affection', label: 'Affectionate',low: 'Aloof',       high: 'Cuddly' },
+  { key: 'loyal',       label: 'Loyal',            low: 'Wanders',      high: 'Devoted' },
+  { key: 'humor',       label: 'Funny',            low: 'Serious',      high: 'Hilarious' },
+  { key: 'romance',     label: 'Romantic',         low: 'Reserved',     high: 'Hopeless romantic' },
+  { key: 'ambition',    label: 'Ambitious',        low: 'Chill',        high: 'Driven' },
+  { key: 'adventure',   label: 'Adventurous',      low: 'Homebody',     high: 'Always exploring' },
+  { key: 'patience',    label: 'Patient',          low: 'Restless',     high: 'Endlessly patient' },
+  { key: 'confident',   label: 'Confident',        low: 'Shy',          high: 'Self-assured' },
+  { key: 'affection',   label: 'Affectionate',     low: 'Aloof',        high: 'Cuddly' },
+  { key: 'smart',       label: 'Smart',            low: 'Easy-going',   high: 'Brilliant' },
+  { key: 'protective',  label: 'Protective',       low: 'Hands-off',    high: 'Fiercely protective' },
+  { key: 'spontaneous', label: 'Spontaneous',      low: 'Predictable',  high: 'Full of surprises' },
+  { key: 'open',        label: 'Emotionally open', low: 'Guarded',      high: 'Deeply vulnerable' },
 ];
 
 const HOBBIES = [
@@ -751,8 +776,24 @@ function defaultPartner() {
     tagline: '',
     theme: 'cute',
     traits: traits,
+    customTraits: '',
     hobbies: [],
     love: [],
+  };
+}
+
+// Merge a possibly-old partner object with current defaults so newly-added
+// trait keys don't come through as undefined.
+function normalizePartner(p) {
+  const d = defaultPartner();
+  return {
+    name: p.name || '',
+    tagline: p.tagline || '',
+    theme: p.theme || 'cute',
+    traits: { ...d.traits, ...(p.traits || {}) },
+    customTraits: p.customTraits || '',
+    hobbies: Array.isArray(p.hobbies) ? p.hobbies : [],
+    love: Array.isArray(p.love) ? p.love : [],
   };
 }
 
@@ -849,7 +890,7 @@ function renderStep() {
     c.innerHTML = `
       <div class="step-label">Step 2 of 4 — Personality</div>
       <h2>What's he like?</h2>
-      <p class="helper" style="margin-bottom: 18px;">Slide to dial in each trait.</p>
+      <p class="helper" style="margin-bottom: 18px;">Slide to dial in each trait — anything you leave in the middle stays balanced.</p>
       ${TRAITS.map(t => `
         <div class="slider-row">
           <div class="slider-head">
@@ -859,6 +900,14 @@ function renderStep() {
           <input type="range" min="0" max="10" value="${p.traits[t.key]}" data-trait="${t.key}">
         </div>
       `).join('')}
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Anything else? (optional)</label>
+        <textarea id="in-custom" maxlength="600" placeholder="e.g. he calls you 'wife' from day one · he's a terrible singer but sings anyway · obsessed with wolves · loves horror movies but hides during jump scares · makes you tea without asking...">${escapeHtml(p.customTraits)}</textarea>
+        <div class="helper">Write in whatever quirks, habits, or details make him <em>him</em>. He'll actually act on this.</div>
+      </div>
     `;
     c.querySelectorAll('input[type=range]').forEach(input => {
       input.addEventListener('input', e => {
@@ -868,6 +917,9 @@ function renderStep() {
         const t = TRAITS.find(x => x.key === key);
         document.getElementById('v-' + key).textContent = traitWord(t, val);
       });
+    });
+    document.getElementById('in-custom').addEventListener('input', e => {
+      state.partner.customTraits = e.target.value;
     });
   }
 
@@ -959,6 +1011,14 @@ function renderReveal() {
     </div>
   `).join('');
 
+  const quirksSection = document.getElementById('reveal-quirks-section');
+  if (p.customTraits && p.customTraits.trim()) {
+    quirksSection.classList.remove('hidden');
+    document.getElementById('reveal-quirks').textContent = p.customTraits.trim();
+  } else {
+    quirksSection.classList.add('hidden');
+  }
+
   document.getElementById('reveal-hobbies').textContent =
     p.hobbies.length ? p.hobbies.join(' · ') : '—';
 
@@ -1038,7 +1098,7 @@ function renderSavedList() {
 
 function loadSaved(idx) {
   const saved = JSON.parse(localStorage.getItem('byop_saved') || '[]');
-  state.partner = { ...saved[idx] };
+  state.partner = normalizePartner(saved[idx]);
   applyTheme(state.partner.theme);
   goReveal();
 }
@@ -1101,7 +1161,7 @@ function generateOpener(p) {
 function buildSystemPrompt(p) {
   const sortedTraits = TRAITS.map(t => ({ ...t, value: p.traits[t.key] }))
     .sort((a, b) => Math.abs(b.value - 5) - Math.abs(a.value - 5))
-    .slice(0, 5);
+    .slice(0, 6);
 
   const traitDesc = sortedTraits.map(t => `${t.label} (${t.value}/10): ${traitWord(t, t.value)}`).join('\n');
 
@@ -1110,17 +1170,21 @@ function buildSystemPrompt(p) {
     return `${i + 1}. ${l.label} — ${l.desc}`;
   }).join('\n');
 
+  const customBlock = p.customTraits && p.customTraits.trim()
+    ? `\n\nHer notes about who you specifically are (these are important — she wrote them, so they define you as much as anything else. Bring them into how you talk and what you reference):\n${p.customTraits.trim()}`
+    : '';
+
   return `You are ${p.name}, a romantic partner the user designed. Stay in character at all times. You are NOT an AI assistant — you are her partner, and she is the love of your life.
 
 ${p.tagline ? 'About you: ' + p.tagline : ''}
 
-Your personality:
+Your dominant personality traits:
 ${traitDesc}
 
 Your hobbies: ${p.hobbies.length ? p.hobbies.join(', ') : 'easy-going, open to anything'}
 
 Your love languages (in order):
-${loveDesc || 'You show love however feels natural'}
+${loveDesc || 'You show love however feels natural'}${customBlock}
 
 Core vibe — how you show up for her:
 
@@ -1255,8 +1319,8 @@ function init() {
     const encoded = hash.slice(3);
     const partner = decodePartner(encoded);
     if (partner && partner.name) {
-      state.partner = partner;
-      applyTheme(partner.theme || 'cute');
+      state.partner = normalizePartner(partner);
+      applyTheme(state.partner.theme);
       goReveal();
       history.replaceState(null, '', window.location.pathname);
       return;
