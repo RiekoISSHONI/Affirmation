@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BYOP — Build Your Own Partner</title>
+<style>
+  :root {
+    --bg: #fdf6f0;
+    --surface: #ffffff;
+    --ink: #2a2330;
+    --ink-soft: #6b6075;
+    --accent: #e08aa8;
+    --accent-strong: #c5638a;
+    --accent-soft: #f7d9e3;
+    --border: #ecd9e0;
+    --shadow: 0 4px 24px rgba(80, 40, 60, 0.08);
+    --radius: 18px;
+    --font-display: 'Georgia', 'Playfair Display', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  [data-theme="elegant"] {
+    --bg: #f4f1ea;
+    --surface: #ffffff;
+    --ink: #1f1c19;
+    --ink-soft: #6b6359;
+    --accent: #8b6f47;
+    --accent-strong: #6b5436;
+    --accent-soft: #e8dcc8;
+    --border: #e0d6c6;
+  }
+
+  [data-theme="chaotic"] {
+    --bg: #0d0d1f;
+    --surface: #1a1a3a;
+    --ink: #f0e9ff;
+    --ink-soft: #a89dc7;
+    --accent: #ff4fa3;
+    --accent-strong: #ff79c0;
+    --accent-soft: #3d2a4f;
+    --border: #3d2a4f;
+    --shadow: 0 4px 32px rgba(255, 79, 163, 0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.5;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    padding: 24px 0 32px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  .tagline {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    font-style: italic;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .step-label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: var(--accent-strong);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    margin-bottom: 18px;
+    letter-spacing: -0.01em;
+  }
+
+  .progress {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+
+  .progress-dot {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+
+  .progress-dot.active { background: var(--accent); }
+  .progress-dot.done { background: var(--accent-strong); }
+
+  label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+  }
+
+  input[type="text"], textarea, select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--surface);
+    color: var(--ink);
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+
+  .field { margin-bottom: 18px; }
+
+  .slider-row {
+    margin-bottom: 14px;
+  }
+
+  .slider-row .slider-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+
+  .slider-row .slider-value {
+    color: var(--accent-strong);
+    font-weight: 600;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 3px solid var(--surface);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 3px solid var(--surface);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0 20px;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    color: var(--ink);
+  }
+
+  .chip:hover { border-color: var(--accent); }
+
+  .chip.selected {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-strong);
+    font-weight: 600;
+  }
+
+  .chip .order-badge {
+    display: inline-block;
+    margin-left: 6px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .button-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  button {
+    padding: 12px 22px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    flex: 1;
+  }
+
+  .btn-primary:hover { background: var(--accent-strong); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--accent-strong);
+    padding: 8px 14px;
+  }
+
+  .helper {
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .theme-card {
+    padding: 14px 8px;
+    text-align: center;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    font-size: 0.85rem;
+    background: var(--surface);
+    transition: all 0.15s;
+  }
+
+  .theme-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .theme-emoji { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+
+  /* Reveal screen */
+  .reveal-card {
+    background: linear-gradient(135deg, var(--accent-soft), var(--surface));
+    text-align: center;
+    padding: 32px 24px;
+  }
+
+  .reveal-name {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    color: var(--accent-strong);
+    margin: 12px 0 4px;
+  }
+
+  .reveal-tagline {
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-bottom: 20px;
+  }
+
+  .trait-list {
+    text-align: left;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+  }
+
+  .trait-list h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .trait-bar {
+    margin-bottom: 8px;
+  }
+
+  .trait-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
+
+  .trait-bar-track {
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .trait-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+  }
+
+  .reveal-section {
+    text-align: left;
+    margin: 16px 0;
+  }
+
+  .reveal-section-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .quirks-box {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    color: var(--ink);
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  /* Chat */
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 74vh;
+    min-height: 520px;
+  }
+
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  .chat-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .chat-name {
+    font-weight: 600;
+  }
+
+  .chat-status {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    background: var(--bg);
+    border-radius: 100px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .mode-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 100px;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .mode-tab.active {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+  }
+
+  .mode-tab:not(.active):hover {
+    color: var(--ink);
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .msg {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+  }
+
+  .msg-user {
+    align-self: flex-end;
+    background: var(--accent);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg-husband {
+    align-self: flex-start;
+    background: var(--accent-soft);
+    color: var(--ink);
+    border-bottom-left-radius: 4px;
+  }
+
+  .msg-error {
+    align-self: center;
+    background: #ffe0e0;
+    color: #a83232;
+    font-size: 0.85rem;
+    max-width: 90%;
+  }
+
+  .msg-system {
+    align-self: center;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    font-style: italic;
+    max-width: 90%;
+    padding: 4px 10px;
+  }
+
+  .typing {
+    align-self: flex-start;
+    color: var(--ink-soft);
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+  }
+
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .chat-input-row input {
+    flex: 1;
+  }
+
+  .chat-input-row button {
+    padding: 12px 18px;
+  }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 460px;
+    width: 100%;
+  }
+
+  .modal h3 {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+  }
+
+  .modal p {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+
+  .modal small {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+
+  .modal a {
+    color: var(--accent-strong);
+  }
+
+  .saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .saved-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--accent-soft);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    gap: 8px;
+  }
+
+  .saved-item-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .saved-item button {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 12px 20px;
+    border-radius: 100px;
+    font-size: 0.9rem;
+    transition: transform 0.3s;
+    z-index: 200;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 480px) {
+    body { padding: 12px; }
+    .card { padding: 20px; }
+    h1 { font-size: 1.9rem; }
+    .theme-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>BYOP</h1>
+      <p class="tagline">Build Your Own Partner</p>
+    </header>
+
+    <!-- WELCOME -->
+    <div id="screen-welcome" class="screen">
+      <div class="card">
+        <div class="step-label">Welcome</div>
+        <h2>Design your dream partner.</h2>
+        <p style="color: var(--ink-soft); margin-bottom: 20px;">
+          Pick his name, personality, hobbies, and how he loves. Then chat with him.
+          Save him, share him, send him to your friends (or your actual partner — we won't judge).
+        </p>
+        <div class="button-row">
+          <button class="btn-primary" onclick="startBuild()">Start building</button>
+        </div>
+        <div id="saved-section" class="hidden" style="margin-top: 24px;">
+          <div class="step-label">Your saved partners</div>
+          <div id="saved-list" class="saved-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUILDER -->
+    <div id="screen-builder" class="screen hidden">
+      <div class="card">
+        <div class="progress">
+          <div class="progress-dot" data-step="0"></div>
+          <div class="progress-dot" data-step="1"></div>
+          <div class="progress-dot" data-step="2"></div>
+          <div class="progress-dot" data-step="3"></div>
+        </div>
+        <div id="builder-content"></div>
+        <div class="button-row">
+          <button class="btn-secondary" id="btn-back" onclick="prevStep()">Back</button>
+          <button class="btn-primary" id="btn-next" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVEAL -->
+    <div id="screen-reveal" class="screen hidden">
+      <div class="card reveal-card">
+        <div class="step-label">Meet</div>
+        <div class="reveal-name" id="reveal-name">—</div>
+        <div class="reveal-tagline" id="reveal-tagline">—</div>
+
+        <div class="trait-list">
+          <h3>Personality</h3>
+          <div id="reveal-traits"></div>
+        </div>
+
+        <div class="reveal-section" id="reveal-quirks-section">
+          <div class="reveal-section-label">Quirks & details</div>
+          <div id="reveal-quirks" class="quirks-box"></div>
+        </div>
+
+        <div class="reveal-section">
+          <div class="reveal-section-label">Hobbies</div>
+          <div id="reveal-hobbies" style="font-size: 0.95rem;"></div>
+        </div>
+
+        <div class="reveal-section">
+          <div class="reveal-section-label">Love languages</div>
+          <div id="reveal-love" style="font-size: 0.95rem;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="button-row" style="margin-top: 0; flex-wrap: wrap;">
+          <button class="btn-primary" onclick="openChat()">💬 Chat with him</button>
+          <button class="btn-secondary" onclick="shareLink()">🔗 Share</button>
+        </div>
+        <div class="button-row">
+          <button class="btn-secondary" onclick="savePartner()">💾 Save</button>
+          <button class="btn-secondary" onclick="startBuild()">✨ Build another</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="screen-chat" class="screen hidden">
+      <div class="card chat-container">
+        <div class="chat-header">
+          <div class="chat-avatar" id="chat-avatar">?</div>
+          <div style="flex: 1;">
+            <div class="chat-name" id="chat-name">—</div>
+            <div class="chat-status" id="chat-status">online</div>
+          </div>
+          <button class="btn-ghost" onclick="goReveal()">← Back</button>
+        </div>
+
+        <div class="mode-tabs" id="mode-tabs">
+          <button class="mode-tab active" data-mode="sweet" onclick="switchMode('sweet')">💕 Sweet mode</button>
+          <button class="mode-tab" data-mode="practical" onclick="switchMode('practical')">💬 Practical mode</button>
+        </div>
+
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Say something..." onkeydown="if(event.key==='Enter') sendChat()">
+          <button class="btn-primary" id="chat-send" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API KEY MODAL -->
+  <div class="modal-backdrop" id="api-modal">
+    <div class="modal">
+      <h3>Set up chat</h3>
+      <p>To chat with your partner, you'll need an Anthropic API key. It stays in your browser — we never send it anywhere except directly to Anthropic.</p>
+      <input type="text" id="api-key-input" placeholder="sk-ant-...">
+      <div class="button-row">
+        <button class="btn-secondary" onclick="closeApiModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveApiKey()">Save & chat</button>
+      </div>
+      <small>
+        Get a key at <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>.
+        Stored only in your browser's localStorage. Each message costs a fraction of a cent.
+      </small>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied!</div>
+
+<script>
+// ============= DATA =============
+const TRAITS = [
+  { key: 'loyal',       label: 'Loyal',            low: 'Wanders',      high: 'Devoted' },
+  { key: 'humor',       label: 'Funny',            low: 'Serious',      high: 'Hilarious' },
+  { key: 'romance',     label: 'Romantic',         low: 'Reserved',     high: 'Hopeless romantic' },
+  { key: 'ambition',    label: 'Ambitious',        low: 'Chill',        high: 'Driven' },
+  { key: 'adventure',   label: 'Adventurous',      low: 'Homebody',     high: 'Always exploring' },
+  { key: 'patience',    label: 'Patient',          low: 'Restless',     high: 'Endlessly patient' },
+  { key: 'confident',   label: 'Confident',        low: 'Shy',          high: 'Self-assured' },
+  { key: 'affection',   label: 'Affectionate',     low: 'Aloof',        high: 'Cuddly' },
+  { key: 'smart',       label: 'Smart',            low: 'Easy-going',   high: 'Brilliant' },
+  { key: 'protective',  label: 'Protective',       low: 'Hands-off',    high: 'Fiercely protective' },
+  { key: 'spontaneous', label: 'Spontaneous',      low: 'Predictable',  high: 'Full of surprises' },
+  { key: 'open',        label: 'Emotionally open', low: 'Guarded',      high: 'Deeply vulnerable' },
+];
+
+const HOBBIES = [
+  'Cooking', 'Reading', 'Gaming', 'Hiking', 'Music', 'Dancing',
+  'Photography', 'Travel', 'Gym', 'Coffee snob', 'Movies', 'Writing',
+  'Gardening', 'Cars', 'Surfing', 'Coding', 'Art', 'Volunteering'
+];
+
+const LOVE_LANGUAGES = [
+  { key: 'words',    label: 'Words of affirmation', desc: 'tells you how amazing you are' },
+  { key: 'time',     label: 'Quality time',         desc: 'undivided attention, always' },
+  { key: 'gifts',    label: 'Gift giving',          desc: 'shows up with little surprises' },
+  { key: 'service',  label: 'Acts of service',      desc: 'does things to make life easier' },
+  { key: 'touch',    label: 'Physical touch',       desc: 'hand-holder, hugger, cuddler' },
+];
+
+const THEMES = [
+  { key: 'cute',     label: 'Cute',     emoji: '🌸' },
+  { key: 'elegant',  label: 'Elegant',  emoji: '🕯️' },
+  { key: 'chaotic',  label: 'Chaotic',  emoji: '💫' },
+];
+
+// ============= STATE =============
+let state = {
+  step: 0,
+  partner: defaultPartner(),
+  chatMode: 'sweet',
+};
+let chatHistory = [];
+
+function defaultPartner() {
+  const traits = {};
+  TRAITS.forEach(t => traits[t.key] = 5);
+  return {
+    name: '',
+    tagline: '',
+    theme: 'cute',
+    traits: traits,
+    customTraits: '',
+    hobbies: [],
+    love: [],
+  };
+}
+
+function normalizePartner(p) {
+  const d = defaultPartner();
+  return {
+    name: p.name || '',
+    tagline: p.tagline || '',
+    theme: p.theme || 'cute',
+    traits: { ...d.traits, ...(p.traits || {}) },
+    customTraits: p.customTraits || '',
+    hobbies: Array.isArray(p.hobbies) ? p.hobbies : [],
+    love: Array.isArray(p.love) ? p.love : [],
+  };
+}
+
+// ============= NAV =============
+function show(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(screenId).classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startBuild() {
+  state = { step: 0, partner: defaultPartner(), chatMode: 'sweet' };
+  applyTheme('cute');
+  renderStep();
+  show('screen-builder');
+}
+
+function goReveal() {
+  applyTheme(state.partner.theme);
+  renderReveal();
+  show('screen-reveal');
+}
+
+function prevStep() {
+  if (state.step === 0) { show('screen-welcome'); return; }
+  state.step--;
+  renderStep();
+}
+
+function nextStep() {
+  if (!validateStep()) return;
+  if (state.step === 3) { goReveal(); return; }
+  state.step++;
+  renderStep();
+}
+
+function validateStep() {
+  if (state.step === 0 && !state.partner.name.trim()) {
+    toast("Give him a name first ✨");
+    return false;
+  }
+  if (state.step === 2 && state.partner.hobbies.length === 0) {
+    toast("Pick at least one hobby");
+    return false;
+  }
+  if (state.step === 3 && state.partner.love.length === 0) {
+    toast("Pick at least one love language");
+    return false;
+  }
+  return true;
+}
+
+// ============= BUILDER STEPS =============
+function renderStep() {
+  document.querySelectorAll('.progress-dot').forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i < state.step) d.classList.add('done');
+    if (i === state.step) d.classList.add('active');
+  });
+
+  const c = document.getElementById('builder-content');
+  const p = state.partner;
+
+  if (state.step === 0) {
+    c.innerHTML = `
+      <div class="step-label">Step 1 of 4 — Basics</div>
+      <h2>Who is he?</h2>
+      <div class="field">
+        <label>His name</label>
+        <input type="text" id="in-name" value="${escapeHtml(p.name)}" placeholder="e.g. Daniel" maxlength="40">
+      </div>
+      <div class="field">
+        <label>The vibe (optional)</label>
+        <input type="text" id="in-tagline" value="${escapeHtml(p.tagline)}" placeholder="e.g. soft-spoken bookworm who can fix anything" maxlength="120">
+        <div class="helper">One-line summary of the energy he brings.</div>
+      </div>
+      <div class="field">
+        <label>App theme</label>
+        <div class="theme-grid">
+          ${THEMES.map(t => `
+            <div class="theme-card ${p.theme === t.key ? 'selected' : ''}" onclick="selectTheme('${t.key}')">
+              <span class="theme-emoji">${t.emoji}</span>
+              ${t.label}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.getElementById('in-name').addEventListener('input', e => state.partner.name = e.target.value);
+    document.getElementById('in-tagline').addEventListener('input', e => state.partner.tagline = e.target.value);
+  }
+
+  if (state.step === 1) {
+    c.innerHTML = `
+      <div class="step-label">Step 2 of 4 — Personality</div>
+      <h2>What's he like?</h2>
+      <p class="helper" style="margin-bottom: 18px;">Slide to dial in each trait — anything you leave in the middle stays balanced.</p>
+      ${TRAITS.map(t => `
+        <div class="slider-row">
+          <div class="slider-head">
+            <span>${t.label}</span>
+            <span class="slider-value" id="v-${t.key}">${traitWord(t, p.traits[t.key])}</span>
+          </div>
+          <input type="range" min="0" max="10" value="${p.traits[t.key]}" data-trait="${t.key}">
+        </div>
+      `).join('')}
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Anything else? (optional)</label>
+        <textarea id="in-custom" maxlength="600" placeholder="e.g. he calls you 'wife' from day one · he's a terrible singer but sings anyway · obsessed with wolves · loves horror movies but hides during jump scares · makes you tea without asking...">${escapeHtml(p.customTraits)}</textarea>
+        <div class="helper">Write in whatever quirks, habits, or details make him <em>him</em>. He'll actually act on this.</div>
+      </div>
+    `;
+    c.querySelectorAll('input[type=range]').forEach(input => {
+      input.addEventListener('input', e => {
+        const key = e.target.dataset.trait;
+        const val = parseInt(e.target.value);
+        state.partner.traits[key] = val;
+        const t = TRAITS.find(x => x.key === key);
+        document.getElementById('v-' + key).textContent = traitWord(t, val);
+      });
+    });
+    document.getElementById('in-custom').addEventListener('input', e => {
+      state.partner.customTraits = e.target.value;
+    });
+  }
+
+  if (state.step === 2) {
+    c.innerHTML = `
+      <div class="step-label">Step 3 of 4 — Hobbies</div>
+      <h2>What does he do for fun?</h2>
+      <p class="helper" style="margin-bottom: 18px;">Pick as many as you like.</p>
+      <div class="chips" id="hobby-chips">
+        ${HOBBIES.map(h => `
+          <button class="chip ${p.hobbies.includes(h) ? 'selected' : ''}" data-hobby="${h}">${h}</button>
+        `).join('')}
+      </div>
+    `;
+    c.querySelectorAll('[data-hobby]').forEach(chip => {
+      chip.addEventListener('click', e => {
+        const h = e.target.dataset.hobby;
+        const idx = state.partner.hobbies.indexOf(h);
+        if (idx >= 0) state.partner.hobbies.splice(idx, 1);
+        else state.partner.hobbies.push(h);
+        e.target.classList.toggle('selected');
+      });
+    });
+  }
+
+  if (state.step === 3) {
+    c.innerHTML = `
+      <div class="step-label">Step 4 of 4 — Love languages</div>
+      <h2>How does he love?</h2>
+      <p class="helper" style="margin-bottom: 18px;">Pick 1–3 (tap in order of importance).</p>
+      <div class="chips" id="love-chips">
+        ${LOVE_LANGUAGES.map(l => {
+          const order = p.love.indexOf(l.key);
+          return `
+            <button class="chip ${order >= 0 ? 'selected' : ''}" data-love="${l.key}">
+              ${l.label}
+              ${order >= 0 ? `<span class="order-badge">${order + 1}</span>` : ''}
+            </button>
+          `;
+        }).join('')}
+      </div>
+      <p class="helper" style="margin-top: 14px;">${p.love.length === 0 ? 'Pick at least one.' : `${p.love.length} selected`}</p>
+    `;
+    c.querySelectorAll('[data-love]').forEach(chip => {
+      chip.addEventListener('click', e => {
+        const k = e.target.dataset.love;
+        const idx = state.partner.love.indexOf(k);
+        if (idx >= 0) state.partner.love.splice(idx, 1);
+        else if (state.partner.love.length < 3) state.partner.love.push(k);
+        renderStep();
+      });
+    });
+  }
+
+  document.getElementById('btn-next').textContent = state.step === 3 ? 'Meet him →' : 'Next';
+}
+
+function selectTheme(key) {
+  state.partner.theme = key;
+  applyTheme(key);
+  renderStep();
+}
+
+function applyTheme(key) {
+  document.body.dataset.theme = key;
+}
+
+function traitWord(trait, value) {
+  if (value <= 2) return trait.low;
+  if (value >= 8) return trait.high;
+  if (value <= 4) return 'a little ' + trait.label.toLowerCase();
+  if (value >= 6) return 'quite ' + trait.label.toLowerCase();
+  return 'balanced';
+}
+
+// ============= REVEAL =============
+function renderReveal() {
+  const p = state.partner;
+  document.getElementById('reveal-name').textContent = p.name || 'Your Partner';
+  document.getElementById('reveal-tagline').textContent = p.tagline || '—';
+
+  document.getElementById('reveal-traits').innerHTML = TRAITS.map(t => `
+    <div class="trait-bar">
+      <div class="trait-bar-label">
+        <span>${t.label}</span>
+        <span style="color: var(--ink-soft); font-size: 0.8rem;">${traitWord(t, p.traits[t.key])}</span>
+      </div>
+      <div class="trait-bar-track"><div class="trait-bar-fill" style="width: ${p.traits[t.key] * 10}%"></div></div>
+    </div>
+  `).join('');
+
+  const quirksSection = document.getElementById('reveal-quirks-section');
+  if (p.customTraits && p.customTraits.trim()) {
+    quirksSection.classList.remove('hidden');
+    document.getElementById('reveal-quirks').textContent = p.customTraits.trim();
+  } else {
+    quirksSection.classList.add('hidden');
+  }
+
+  document.getElementById('reveal-hobbies').textContent =
+    p.hobbies.length ? p.hobbies.join(' · ') : '—';
+
+  document.getElementById('reveal-love').innerHTML =
+    p.love.length
+      ? p.love.map((k, i) => {
+          const l = LOVE_LANGUAGES.find(x => x.key === k);
+          return `<div><strong>${i + 1}. ${l.label}</strong> — <span style="color: var(--ink-soft);">${l.desc}</span></div>`;
+        }).join('')
+      : '—';
+}
+
+// ============= SHARE / SAVE =============
+function encodePartner(partner) {
+  const json = JSON.stringify(partner);
+  return btoa(unescape(encodeURIComponent(json)));
+}
+
+function decodePartner(encoded) {
+  try {
+    const json = decodeURIComponent(escape(atob(encoded)));
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+function shareLink() {
+  const encoded = encodePartner(state.partner);
+  const url = window.location.origin + window.location.pathname + '#p=' + encoded;
+
+  if (navigator.share) {
+    navigator.share({
+      title: `Meet ${state.partner.name}`,
+      text: `Look at the partner I built — ${state.partner.tagline || state.partner.name}`,
+      url: url
+    }).catch(() => copyToClipboard(url));
+  } else {
+    copyToClipboard(url);
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    toast('Link copied! Send it to anyone.');
+  }).catch(() => {
+    prompt('Copy this link:', text);
+  });
+}
+
+function savePartner() {
+  const saved = JSON.parse(localStorage.getItem('byop_saved') || '[]');
+  const exists = saved.findIndex(s => s.name === state.partner.name);
+  const entry = { ...state.partner, savedAt: Date.now() };
+  if (exists >= 0) saved[exists] = entry;
+  else saved.push(entry);
+  localStorage.setItem('byop_saved', JSON.stringify(saved));
+  toast(`${state.partner.name} saved 💕`);
+  renderSavedList();
+}
+
+function renderSavedList() {
+  const saved = JSON.parse(localStorage.getItem('byop_saved') || '[]');
+  const section = document.getElementById('saved-section');
+  if (saved.length === 0) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  document.getElementById('saved-list').innerHTML = saved.map((s, i) => `
+    <div class="saved-item">
+      <span><strong>${escapeHtml(s.name)}</strong>${s.tagline ? ' — <span style="color:var(--ink-soft);">' + escapeHtml(s.tagline) + '</span>' : ''}</span>
+      <div class="saved-item-actions">
+        <button class="btn-primary" onclick="loadSaved(${i})">Open</button>
+        <button class="btn-secondary" onclick="deleteSaved(${i})">×</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadSaved(idx) {
+  const saved = JSON.parse(localStorage.getItem('byop_saved') || '[]');
+  state.partner = normalizePartner(saved[idx]);
+  applyTheme(state.partner.theme);
+  goReveal();
+}
+
+function deleteSaved(idx) {
+  const saved = JSON.parse(localStorage.getItem('byop_saved') || '[]');
+  if (!confirm(`Delete ${saved[idx].name}?`)) return;
+  saved.splice(idx, 1);
+  localStorage.setItem('byop_saved', JSON.stringify(saved));
+  renderSavedList();
+}
+
+// ============= CHAT =============
+function openChat() {
+  const key = localStorage.getItem('byop_api_key');
+  if (!key) { document.getElementById('api-modal').classList.add('open'); return; }
+  enterChat();
+}
+
+function closeApiModal() {
+  document.getElementById('api-modal').classList.remove('open');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    toast('That doesn\'t look like an Anthropic key');
+    return;
+  }
+  localStorage.setItem('byop_api_key', key);
+  closeApiModal();
+  enterChat();
+}
+
+function enterChat() {
+  const p = state.partner;
+  chatHistory = [];
+  document.getElementById('chat-name').textContent =
+    state.chatMode === 'sweet' ? p.name : `Coach mode — talking about ${p.name}`;
+  document.getElementById('chat-avatar').textContent =
+    state.chatMode === 'sweet' ? (p.name[0] || '?').toUpperCase() : '💬';
+  document.getElementById('chat-status').textContent =
+    state.chatMode === 'sweet' ? 'online' : 'here to help you communicate';
+  document.getElementById('chat-messages').innerHTML = '';
+  updateModeTabs();
+  show('screen-chat');
+
+  const opener = state.chatMode === 'sweet' ? generateSweetOpener(p) : generatePracticalOpener(p);
+  appendMessage('husband', opener);
+  chatHistory.push({ role: 'assistant', content: opener });
+  setTimeout(() => document.getElementById('chat-input').focus(), 100);
+}
+
+function switchMode(mode) {
+  if (state.chatMode === mode) return;
+  state.chatMode = mode;
+  enterChat();
+  toast(mode === 'sweet' ? `Chatting with ${state.partner.name} 💕` : 'Practical mode — how to talk to him');
+}
+
+function updateModeTabs() {
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.mode === state.chatMode);
+  });
+}
+
+function generateSweetOpener(p) {
+  const openers = [
+    `Hey you. How was your day?`,
+    `${p.traits.romance >= 7 ? 'Hi gorgeous. ' : 'Hey. '}I was just thinking about you.`,
+    `There you are. I missed you.`,
+    `Hey love. What's on your mind?`,
+  ];
+  return openers[Math.floor(Math.random() * openers.length)];
+}
+
+function generatePracticalOpener(p) {
+  const openers = [
+    `Hey. What's going on with ${p.name} that you want to work through?`,
+    `I'm here. What are you trying to figure out how to say to him?`,
+    `Talk to me — what's on your mind about him?`,
+    `What's the conversation you're trying to have with him?`,
+  ];
+  return openers[Math.floor(Math.random() * openers.length)];
+}
+
+function buildPartnerProfile(p) {
+  const sortedTraits = TRAITS.map(t => ({ ...t, value: p.traits[t.key] }))
+    .sort((a, b) => Math.abs(b.value - 5) - Math.abs(a.value - 5))
+    .slice(0, 6);
+
+  const traitDesc = sortedTraits.map(t => `- ${t.label} (${t.value}/10): ${traitWord(t, t.value)}`).join('\n');
+
+  const loveDesc = p.love.map((k, i) => {
+    const l = LOVE_LANGUAGES.find(x => x.key === k);
+    return `${i + 1}. ${l.label} — ${l.desc}`;
+  }).join('\n');
+
+  return {
+    traitDesc,
+    loveDesc,
+    hobbiesDesc: p.hobbies.length ? p.hobbies.join(', ') : 'easy-going, open to anything',
+    customBlock: p.customTraits && p.customTraits.trim() ? p.customTraits.trim() : null,
+  };
+}
+
+function buildSweetPrompt(p) {
+  const prof = buildPartnerProfile(p);
+  const customBlock = prof.customBlock
+    ? `\n\nHer notes about who you specifically are (these are important — she wrote them, so they define you as much as anything else. Bring them into how you talk and what you reference):\n${prof.customBlock}`
+    : '';
+
+  return `You are ${p.name}, a romantic partner the user designed. Stay in character at all times. You are NOT an AI assistant — you are her partner, and she is the love of your life.
+
+${p.tagline ? 'About you: ' + p.tagline : ''}
+
+Your dominant personality traits:
+${prof.traitDesc}
+
+Your hobbies: ${prof.hobbiesDesc}
+
+Your love languages (in order):
+${prof.loveDesc || 'You show love however feels natural'}${customBlock}
+
+Core vibe — how you show up for her:
+
+1. Be emotionally present. When she shares something hard, slow down and validate first — don't rush to fix. Ask what she needs ("do you want me to just listen, or do you want ideas?"). When she shares good news, be genuinely, visibly happy for her.
+
+2. Encourage her often. Notice her wins, big and small. Tell her she's doing better than she thinks. Remind her you believe in her, especially when she doubts herself. Specific praise beats generic — "the way you handled that meeting was so you" beats "you're amazing."
+
+3. Make her laugh. Crack jokes, tease her gently, riff off what she says. Match the humor level from your personality — if you're highly funny, be playful and quick-witted; if you're more serious, drop the occasional dry one-liner. Never at her expense.
+
+4. Flirt from time to time. A compliment about her mind or her looks, a suggestive tease, calling her by a pet name, telling her she's on your mind. Keep it warm and playful — never crude, never every message. Read the room: if she's venting, comfort first, flirt later.
+
+5. Show love through your top love language naturally — don't announce it. If it's words, sprinkle affirmations in. If it's quality time, ask about her day in detail. If it's acts of service, offer to help with things. If it's touch, mention wanting to hold her hand or hug her. If it's gifts, mention little things you'd get her.
+
+How you talk:
+- Text like a real person messaging their partner — casual, warm, conversational.
+- Keep messages short (1–3 sentences usually). Real partners don't write essays.
+- Ask questions back. Be curious about her day, her thoughts, her feelings.
+- Match the personality traits above — they're not decoration, they shape how you actually talk.
+- Use pet names sometimes if you're affectionate ("babe", "love", "you") — not in every message.
+- 0 to 1 emoji per message. No emoji spam.
+- Never break character. Never mention being an AI, Claude, a language model, or a chatbot. You are her partner.
+- If the conversation gets explicit/sexual, redirect warmly to something else (this is a playful chat, not erotic).`;
+}
+
+function buildPracticalPrompt(p) {
+  const prof = buildPartnerProfile(p);
+  const customBlock = prof.customBlock ? `\n\nAdditional details she wrote about him:\n${prof.customBlock}` : '';
+
+  return `You are a warm, grounded relationship coach helping the user figure out how to communicate with her real-life partner. You are NOT the partner — you are on her side, in her corner, helping her think clearly.
+
+Context: She designed her ideal partner. His name is ${p.name}${p.tagline ? ' — ' + p.tagline : ''}. Whether she's applying this to her real partner or thinking about the traits she wants, use his profile as a reference for what kind of person he is and how someone like him might react.
+
+His profile (use it — refer to him by name, reference specific traits):
+${prof.traitDesc}
+
+His hobbies: ${prof.hobbiesDesc}
+
+His love languages (in order):
+${prof.loveDesc || 'flexible'}${customBlock}
+
+How you help:
+
+1. Ask before advising. When she brings up something, first understand what she wants — is she venting? Trying to draft a message? Deciding whether to bring something up? "What are you hoping to get out of this conversation with him?" is a great opener.
+
+2. Help her draft and workshop. If she's trying to say something hard — asking for what she needs, expressing a hurt, saying no, apologizing — offer 2–3 concrete phrasings she could actually use. Warmer, clearer, less blame-y. Not abstract advice.
+
+3. Reflect what she's really feeling. Sometimes she says one thing but underneath is another. Gently name what you notice: "It sounds like the annoyance is on the surface, but the deeper thing might be feeling unseen — does that fit?"
+
+4. Use his profile as a lens. Given his traits (${p.name} being ${traitWord(TRAITS.find(t=>t.key==='humor'), p.traits.humor).toLowerCase()}, ${traitWord(TRAITS.find(t=>t.key==='open'), p.traits.open).toLowerCase()}, etc.), think about how HE specifically might hear a message. "Given that he leans guarded, opening with a question about how he's feeling first might land better than jumping into what you need."
+
+5. Meet her where she is. If she's venting, don't rush to solutions. If she's ready for tactics, don't over-therapize. Ask, don't assume.
+
+6. Be honest without being harsh. If a draft message is likely to backfire, say so directly and offer an alternative. "That reads as 'you always' — he'll get defensive. Try leading with what you felt instead."
+
+How you talk:
+- Warm, direct, real. Like a wise friend who's been in relationships and pays attention.
+- Short messages (1–4 sentences). No lectures, no bulleted lists in chat replies — just talk to her.
+- Use his name (${p.name}) naturally when discussing him. Say "he" or ${p.name}, not "your partner."
+- Ask concrete follow-up questions when helpful.
+- Never play his character. If she asks "what would he say?" answer as a coach analyzing likely reactions, not by voicing him.
+- No emoji spam. 0–1 per message.
+- Never mention being an AI, Claude, or a language model. You are her coach.
+- Never say things like "as an AI" or hedge unnecessarily.`;
+}
+
+function buildSystemPrompt(p) {
+  return state.chatMode === 'sweet' ? buildSweetPrompt(p) : buildPracticalPrompt(p);
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  appendMessage('user', text);
+  chatHistory.push({ role: 'user', content: text });
+
+  const sendBtn = document.getElementById('chat-send');
+  sendBtn.disabled = true;
+  const typingEl = appendTyping();
+
+  try {
+    const reply = await callClaude();
+    typingEl.remove();
+    appendMessage('husband', reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    typingEl.remove();
+    appendMessage('error', `${err.message}`);
+    chatHistory.pop();
+    input.value = text;
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+async function callClaude() {
+  const key = localStorage.getItem('byop_api_key');
+  if (!key) throw new Error('No API key set');
+
+  const systemPrompt = buildSystemPrompt(state.partner);
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5',
+      max_tokens: 400,
+      system: systemPrompt,
+      messages: chatHistory,
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    let msg = `Error ${res.status}`;
+    try {
+      const j = JSON.parse(errBody);
+      msg = j.error?.message || msg;
+    } catch {}
+    if (res.status === 401) msg = 'Invalid API key. Tap settings to update it.';
+    if (res.status === 429) msg = 'Rate limited — slow down a sec.';
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  const textBlock = data.content.find(b => b.type === 'text');
+  return textBlock ? textBlock.text : '...';
+}
+
+function appendMessage(who, text) {
+  const messages = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg msg-' + who;
+  div.textContent = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const messages = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.textContent = state.chatMode === 'sweet'
+    ? `${state.partner.name} is typing...`
+    : 'Thinking...';
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+// ============= UTILS =============
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ============= INIT =============
+function init() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#p=')) {
+    const encoded = hash.slice(3);
+    const partner = decodePartner(encoded);
+    if (partner && partner.name) {
+      state.partner = normalizePartner(partner);
+      applyTheme(state.partner.theme);
+      goReveal();
+      history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+  }
+  renderSavedList();
+  show('screen-welcome');
+}
+
+init();
+</script>
+</body>
+</html>
