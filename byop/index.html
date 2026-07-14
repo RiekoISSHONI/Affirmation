@@ -402,17 +402,17 @@
   .chat-container {
     display: flex;
     flex-direction: column;
-    height: 70vh;
-    min-height: 500px;
+    height: 74vh;
+    min-height: 520px;
   }
 
   .chat-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding-bottom: 16px;
+    padding-bottom: 12px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
 
   .chat-avatar {
@@ -435,6 +435,40 @@
   .chat-status {
     font-size: 0.8rem;
     color: var(--ink-soft);
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    background: var(--bg);
+    border-radius: 100px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .mode-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 100px;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .mode-tab.active {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+  }
+
+  .mode-tab:not(.active):hover {
+    color: var(--ink);
   }
 
   .chat-messages {
@@ -475,6 +509,16 @@
     color: #a83232;
     font-size: 0.85rem;
     max-width: 90%;
+  }
+
+  .msg-system {
+    align-self: center;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    font-style: italic;
+    max-width: 90%;
+    padding: 4px 10px;
   }
 
   .typing {
@@ -692,10 +736,16 @@
           <div class="chat-avatar" id="chat-avatar">?</div>
           <div style="flex: 1;">
             <div class="chat-name" id="chat-name">—</div>
-            <div class="chat-status">online</div>
+            <div class="chat-status" id="chat-status">online</div>
           </div>
           <button class="btn-ghost" onclick="goReveal()">← Back</button>
         </div>
+
+        <div class="mode-tabs" id="mode-tabs">
+          <button class="mode-tab active" data-mode="sweet" onclick="switchMode('sweet')">💕 Sweet mode</button>
+          <button class="mode-tab" data-mode="practical" onclick="switchMode('practical')">💬 Practical mode</button>
+        </div>
+
         <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-input-row">
           <input type="text" id="chat-input" placeholder="Say something..." onkeydown="if(event.key==='Enter') sendChat()">
@@ -764,7 +814,8 @@ const THEMES = [
 // ============= STATE =============
 let state = {
   step: 0,
-  partner: defaultPartner()
+  partner: defaultPartner(),
+  chatMode: 'sweet',
 };
 let chatHistory = [];
 
@@ -782,8 +833,6 @@ function defaultPartner() {
   };
 }
 
-// Merge a possibly-old partner object with current defaults so newly-added
-// trait keys don't come through as undefined.
 function normalizePartner(p) {
   const d = defaultPartner();
   return {
@@ -805,7 +854,7 @@ function show(screenId) {
 }
 
 function startBuild() {
-  state = { step: 0, partner: defaultPartner() };
+  state = { step: 0, partner: defaultPartner(), chatMode: 'sweet' };
   applyTheme('cute');
   renderStep();
   show('screen-builder');
@@ -1136,19 +1185,36 @@ function saveApiKey() {
 function enterChat() {
   const p = state.partner;
   chatHistory = [];
-  document.getElementById('chat-name').textContent = p.name;
-  document.getElementById('chat-avatar').textContent = (p.name[0] || '?').toUpperCase();
+  document.getElementById('chat-name').textContent =
+    state.chatMode === 'sweet' ? p.name : `Coach mode — talking about ${p.name}`;
+  document.getElementById('chat-avatar').textContent =
+    state.chatMode === 'sweet' ? (p.name[0] || '?').toUpperCase() : '💬';
+  document.getElementById('chat-status').textContent =
+    state.chatMode === 'sweet' ? 'online' : 'here to help you communicate';
   document.getElementById('chat-messages').innerHTML = '';
+  updateModeTabs();
   show('screen-chat');
 
-  // Opening message from him
-  const opener = generateOpener(p);
+  const opener = state.chatMode === 'sweet' ? generateSweetOpener(p) : generatePracticalOpener(p);
   appendMessage('husband', opener);
   chatHistory.push({ role: 'assistant', content: opener });
   setTimeout(() => document.getElementById('chat-input').focus(), 100);
 }
 
-function generateOpener(p) {
+function switchMode(mode) {
+  if (state.chatMode === mode) return;
+  state.chatMode = mode;
+  enterChat();
+  toast(mode === 'sweet' ? `Chatting with ${state.partner.name} 💕` : 'Practical mode — how to talk to him');
+}
+
+function updateModeTabs() {
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.mode === state.chatMode);
+  });
+}
+
+function generateSweetOpener(p) {
   const openers = [
     `Hey you. How was your day?`,
     `${p.traits.romance >= 7 ? 'Hi gorgeous. ' : 'Hey. '}I was just thinking about you.`,
@@ -1158,20 +1224,40 @@ function generateOpener(p) {
   return openers[Math.floor(Math.random() * openers.length)];
 }
 
-function buildSystemPrompt(p) {
+function generatePracticalOpener(p) {
+  const openers = [
+    `Hey. What's going on with ${p.name} that you want to work through?`,
+    `I'm here. What are you trying to figure out how to say to him?`,
+    `Talk to me — what's on your mind about him?`,
+    `What's the conversation you're trying to have with him?`,
+  ];
+  return openers[Math.floor(Math.random() * openers.length)];
+}
+
+function buildPartnerProfile(p) {
   const sortedTraits = TRAITS.map(t => ({ ...t, value: p.traits[t.key] }))
     .sort((a, b) => Math.abs(b.value - 5) - Math.abs(a.value - 5))
     .slice(0, 6);
 
-  const traitDesc = sortedTraits.map(t => `${t.label} (${t.value}/10): ${traitWord(t, t.value)}`).join('\n');
+  const traitDesc = sortedTraits.map(t => `- ${t.label} (${t.value}/10): ${traitWord(t, t.value)}`).join('\n');
 
   const loveDesc = p.love.map((k, i) => {
     const l = LOVE_LANGUAGES.find(x => x.key === k);
     return `${i + 1}. ${l.label} — ${l.desc}`;
   }).join('\n');
 
-  const customBlock = p.customTraits && p.customTraits.trim()
-    ? `\n\nHer notes about who you specifically are (these are important — she wrote them, so they define you as much as anything else. Bring them into how you talk and what you reference):\n${p.customTraits.trim()}`
+  return {
+    traitDesc,
+    loveDesc,
+    hobbiesDesc: p.hobbies.length ? p.hobbies.join(', ') : 'easy-going, open to anything',
+    customBlock: p.customTraits && p.customTraits.trim() ? p.customTraits.trim() : null,
+  };
+}
+
+function buildSweetPrompt(p) {
+  const prof = buildPartnerProfile(p);
+  const customBlock = prof.customBlock
+    ? `\n\nHer notes about who you specifically are (these are important — she wrote them, so they define you as much as anything else. Bring them into how you talk and what you reference):\n${prof.customBlock}`
     : '';
 
   return `You are ${p.name}, a romantic partner the user designed. Stay in character at all times. You are NOT an AI assistant — you are her partner, and she is the love of your life.
@@ -1179,12 +1265,12 @@ function buildSystemPrompt(p) {
 ${p.tagline ? 'About you: ' + p.tagline : ''}
 
 Your dominant personality traits:
-${traitDesc}
+${prof.traitDesc}
 
-Your hobbies: ${p.hobbies.length ? p.hobbies.join(', ') : 'easy-going, open to anything'}
+Your hobbies: ${prof.hobbiesDesc}
 
 Your love languages (in order):
-${loveDesc || 'You show love however feels natural'}${customBlock}
+${prof.loveDesc || 'You show love however feels natural'}${customBlock}
 
 Core vibe — how you show up for her:
 
@@ -1209,6 +1295,51 @@ How you talk:
 - If the conversation gets explicit/sexual, redirect warmly to something else (this is a playful chat, not erotic).`;
 }
 
+function buildPracticalPrompt(p) {
+  const prof = buildPartnerProfile(p);
+  const customBlock = prof.customBlock ? `\n\nAdditional details she wrote about him:\n${prof.customBlock}` : '';
+
+  return `You are a warm, grounded relationship coach helping the user figure out how to communicate with her real-life partner. You are NOT the partner — you are on her side, in her corner, helping her think clearly.
+
+Context: She designed her ideal partner. His name is ${p.name}${p.tagline ? ' — ' + p.tagline : ''}. Whether she's applying this to her real partner or thinking about the traits she wants, use his profile as a reference for what kind of person he is and how someone like him might react.
+
+His profile (use it — refer to him by name, reference specific traits):
+${prof.traitDesc}
+
+His hobbies: ${prof.hobbiesDesc}
+
+His love languages (in order):
+${prof.loveDesc || 'flexible'}${customBlock}
+
+How you help:
+
+1. Ask before advising. When she brings up something, first understand what she wants — is she venting? Trying to draft a message? Deciding whether to bring something up? "What are you hoping to get out of this conversation with him?" is a great opener.
+
+2. Help her draft and workshop. If she's trying to say something hard — asking for what she needs, expressing a hurt, saying no, apologizing — offer 2–3 concrete phrasings she could actually use. Warmer, clearer, less blame-y. Not abstract advice.
+
+3. Reflect what she's really feeling. Sometimes she says one thing but underneath is another. Gently name what you notice: "It sounds like the annoyance is on the surface, but the deeper thing might be feeling unseen — does that fit?"
+
+4. Use his profile as a lens. Given his traits (${p.name} being ${traitWord(TRAITS.find(t=>t.key==='humor'), p.traits.humor).toLowerCase()}, ${traitWord(TRAITS.find(t=>t.key==='open'), p.traits.open).toLowerCase()}, etc.), think about how HE specifically might hear a message. "Given that he leans guarded, opening with a question about how he's feeling first might land better than jumping into what you need."
+
+5. Meet her where she is. If she's venting, don't rush to solutions. If she's ready for tactics, don't over-therapize. Ask, don't assume.
+
+6. Be honest without being harsh. If a draft message is likely to backfire, say so directly and offer an alternative. "That reads as 'you always' — he'll get defensive. Try leading with what you felt instead."
+
+How you talk:
+- Warm, direct, real. Like a wise friend who's been in relationships and pays attention.
+- Short messages (1–4 sentences). No lectures, no bulleted lists in chat replies — just talk to her.
+- Use his name (${p.name}) naturally when discussing him. Say "he" or ${p.name}, not "your partner."
+- Ask concrete follow-up questions when helpful.
+- Never play his character. If she asks "what would he say?" answer as a coach analyzing likely reactions, not by voicing him.
+- No emoji spam. 0–1 per message.
+- Never mention being an AI, Claude, or a language model. You are her coach.
+- Never say things like "as an AI" or hedge unnecessarily.`;
+}
+
+function buildSystemPrompt(p) {
+  return state.chatMode === 'sweet' ? buildSweetPrompt(p) : buildPracticalPrompt(p);
+}
+
 async function sendChat() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
@@ -1229,8 +1360,8 @@ async function sendChat() {
   } catch (err) {
     typingEl.remove();
     appendMessage('error', `${err.message}`);
-    chatHistory.pop(); // remove the user message that failed
-    input.value = text; // restore
+    chatHistory.pop();
+    input.value = text;
   } finally {
     sendBtn.disabled = false;
     input.focus();
@@ -1253,7 +1384,7 @@ async function callClaude() {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5',
-      max_tokens: 256,
+      max_tokens: 400,
       system: systemPrompt,
       messages: chatHistory,
     }),
@@ -1290,7 +1421,9 @@ function appendTyping() {
   const messages = document.getElementById('chat-messages');
   const div = document.createElement('div');
   div.className = 'typing';
-  div.textContent = `${state.partner.name} is typing...`;
+  div.textContent = state.chatMode === 'sweet'
+    ? `${state.partner.name} is typing...`
+    : 'Thinking...';
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
   return div;
@@ -1313,7 +1446,6 @@ function toast(msg) {
 
 // ============= INIT =============
 function init() {
-  // Check URL hash for shared partner
   const hash = window.location.hash;
   if (hash.startsWith('#p=')) {
     const encoded = hash.slice(3);
